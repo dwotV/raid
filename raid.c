@@ -4,8 +4,8 @@
 
 #define BLOCK_SIZE 4096  
 
-void create_parity(FILE *f1, FILE *f2, FILE *parity) {
-    unsigned char byte1, byte2, parity_byte;
+void crearParity(FILE *f1, FILE *f2, FILE *parity) {
+    unsigned char byte1, byte2, parityByte;
     size_t read1, read2;
 
     while (1) {
@@ -22,32 +22,32 @@ void create_parity(FILE *f1, FILE *f2, FILE *parity) {
         }
 
         if (read1 == 1 && read2 == 1) {
-            parity_byte = byte1 ^ byte2;
-            fwrite(&parity_byte, sizeof(unsigned char), 1, parity);
+            parityByte = byte1 ^ byte2;
+            fwrite(&parityByte, sizeof(unsigned char), 1, parity);
         }
     }
 }
 
-void recover_missing_file(FILE *existing_file, FILE *parity, FILE *recovered_file) {
-    unsigned char existing_byte, parity_byte, recovered_byte;
-    size_t read_existing, read_parity;
+void recuperarArchivo(FILE *existing_file, FILE *parity, FILE *recovered_file) {
+    unsigned char byteExistente, parityByte, byteRecuperado;
+    size_t readExistente, readParity;
 
     while (1) {
-        read_existing = fread(&existing_byte, sizeof(unsigned char), 1, existing_file);
-        read_parity = fread(&parity_byte, sizeof(unsigned char), 1, parity);
+        readExistente = fread(&byteExistente, sizeof(unsigned char), 1, existing_file);
+        readParity = fread(&parityByte, sizeof(unsigned char), 1, parity);
 
-        if (read_existing == 0 && read_parity == 0) {
+        if (readExistente == 0 && readParity == 0) {
             break;
         }
 
-        if (read_existing != read_parity) {
+        if (readExistente != readParity) {
             fprintf(stderr, "Error: Los archivos tienen tamaños diferentes.\n");
             exit(EXIT_FAILURE);
         }
 
-        if (read_existing == 1 && read_parity == 1) {
-            recovered_byte = existing_byte ^ parity_byte;
-            fwrite(&recovered_byte, sizeof(unsigned char), 1, recovered_file);
+        if (readExistente == 1 && readParity == 1) {
+            byteRecuperado = byteExistente ^ parityByte;
+            fwrite(&byteRecuperado, sizeof(unsigned char), 1, recovered_file);
         }
     }
 }
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 
         const char *file1 = argv[2];
         const char *file2 = argv[3];
-        const char *parity_filename = "parity.bin";
+        const char *nombreArchivoParity = "parity.bin";
 
         FILE *f1 = fopen(file1, "rb");
         if (f1 == NULL) {
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        FILE *parity = fopen(parity_filename, "wb");
+        FILE *parity = fopen(nombreArchivoParity, "wb");
         if (parity == NULL) {
             perror("Error al crear el archivo de paridad");
             fclose(f1);
@@ -94,9 +94,9 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        create_parity(f1, f2, parity);
+        crearParity(f1, f2, parity);
 
-        printf("Archivo de paridad '%s' creado con éxito.\n", parity_filename);
+        printf("Archivo de paridad '%s' creado con éxito.\n", nombreArchivoParity);
 
         fclose(f1);
         fclose(f2);
@@ -109,38 +109,38 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        const char *existing_file_name = argv[2];
-        const char *parity_file_name = argv[3];
-        const char *recovered_file_name = argv[4];
+        const char *nombreArchivoExistente = argv[2];
+        const char *nombreArchivoParity = argv[3];
+        const char *nombreArchivoRecuperado = argv[4];
 
-        FILE *existing_file = fopen(existing_file_name, "rb");
-        if (existing_file == NULL) {
+        FILE *archivoExistente = fopen(nombreArchivoExistente, "rb");
+        if (archivoExistente == NULL) {
             perror("Error al abrir el archivo existente");
             return EXIT_FAILURE;
         }
 
-        FILE *parity = fopen(parity_file_name, "rb");
+        FILE *parity = fopen(nombreArchivoParity, "rb");
         if (parity == NULL) {
             perror("Error al abrir el archivo de paridad");
-            fclose(existing_file);
+            fclose(archivoExistente);
             return EXIT_FAILURE;
         }
 
-        FILE *recovered_file = fopen(recovered_file_name, "wb");
-        if (recovered_file == NULL) {
+        FILE *archivoRecuperado = fopen(nombreArchivoRecuperado, "wb");
+        if (archivoRecuperado == NULL) {
             perror("Error al crear el archivo recuperado");
-            fclose(existing_file);
+            fclose(archivoExistente);
             fclose(parity);
             return EXIT_FAILURE;
         }
 
-        recover_missing_file(existing_file, parity, recovered_file);
+        recuperarArchivo(archivoExistente, parity, archivoRecuperado);
 
-        printf("Archivo '%s' recuperado con éxito.\n", recovered_file_name);
+        printf("Archivo '%s' recuperado con éxito.\n", nombreArchivoRecuperado);
 
-        fclose(existing_file);
+        fclose(archivoExistente);
         fclose(parity);
-        fclose(recovered_file);
+        fclose(archivoRecuperado);
 
     } else {
         fprintf(stderr, "Modo no reconocido. Usa 'create' para crear paridad o 'recover' para recuperación.\n");
